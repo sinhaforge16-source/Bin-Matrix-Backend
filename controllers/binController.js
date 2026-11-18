@@ -36,7 +36,12 @@ const getBins = async (req, res, next) => {
     }
 
     if (status) {
-      query.status = status;
+      const cleanStatus = status.toLowerCase().includes('offline')
+        ? 'Offline'
+        : status.toLowerCase().includes('online')
+        ? 'Online'
+        : status;
+      query.status = new RegExp(`^${cleanStatus}$`, 'i');
     }
 
     if (capacityStatus) {

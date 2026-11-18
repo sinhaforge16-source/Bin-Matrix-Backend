@@ -14,6 +14,9 @@ const Route = require('./models/Route');
 const ReportMetric = require('./models/ReportMetric');
 const VehicleHistory = require('./models/VehicleHistory');
 const ChatMessage = require('./models/ChatMessage');
+const Notification = require('./models/Notification');
+const RoutePlan = require('./models/RoutePlan');
+const AppUser = require('./models/AppUser');
 
 // Connect to DB
 const connectDB = async () => {
@@ -58,6 +61,9 @@ const importData = async () => {
       ReportMetric.deleteMany(),
       VehicleHistory.deleteMany(),
       ChatMessage.deleteMany(),
+      Notification.deleteMany(),
+      RoutePlan.deleteMany(),
+      AppUser.deleteMany(),
     ]);
 
     // 1. Seed Users (Default Admin & Staff)
@@ -944,8 +950,436 @@ const importData = async () => {
     await ChatMessage.insertMany(chatMessagesToInsert);
     console.log(`Seeded ${chatMessagesToInsert.length} ChatMessages across 5 conversation threads & map pins.`);
 
+    // 9. Seed Notifications (Notification.png)
+    console.log('Seeding Notifications (Notification.png)...');
+    const notificationsToInsert = [
+      {
+        category: 'Routes',
+        message: "Truck TR-102 has completed today's route.",
+        timestamp: new Date(Date.now() - 10 * 60 * 1000), // 10 min ago
+        timeAgo: '10 min ago',
+        actionType: 'Truck',
+        targetId: 'TR-102',
+        actionLabel: 'View Truck',
+        isRead: false,
+      },
+      {
+        category: 'Trucks',
+        message: 'Truck TR-205 has been offline for 4 days.',
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        timeAgo: '2 hours ago',
+        actionType: 'Truck',
+        targetId: 'TR-205',
+        actionLabel: 'View Truck',
+        isRead: false,
+      },
+      {
+        category: 'Drivers',
+        message: 'Driver ID DR-102 has not worked for the last 3 days.',
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        timeAgo: '1 day ago',
+        actionType: 'Driver',
+        targetId: 'DR-102',
+        actionLabel: 'View Driver',
+        isRead: false,
+      },
+      {
+        category: 'Bins',
+        message: 'Bin B-045 has exceeded 90% fill level.',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 min ago
+        timeAgo: '30 minutes ago',
+        actionType: 'Bin',
+        targetId: 'B-045',
+        actionLabel: 'View Bin',
+        isRead: false,
+      },
+      {
+        category: 'Bins',
+        message: 'User ID USR-458 reported garbage with photo and location.',
+        timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 min ago
+        timeAgo: 'Just now',
+        actionType: 'Chat',
+        targetId: 'USR-458',
+        actionLabel: 'View Chat',
+        isRead: false,
+      },
+      {
+        category: 'Bins',
+        message: 'Bin B-078 has been offline for more than 3 days.',
+        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        timeAgo: '3 days ago',
+        actionType: 'Bin',
+        targetId: 'B-078',
+        actionLabel: 'View Bin',
+        isRead: true,
+      },
+      {
+        category: 'Routes',
+        message: 'DR-102 started route 2712_Ewa-01 using vehicle TR-205.',
+        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 min ago
+        timeAgo: 'Just now',
+        actionType: 'Route',
+        targetId: '2712_Ewa-01',
+        actionLabel: 'View Route',
+        isRead: false,
+      },
+    ];
+    await Notification.insertMany(notificationsToInsert);
+    console.log(`Seeded ${notificationsToInsert.length} Notifications.`);
+
+    // 10. Seed Route Plans (Routes1.png & Routes2.png)
+    console.log('Seeding Route Plans (Routes1.png & Routes2.png)...');
+    const routePlansToInsert = [
+      {
+        category: 'Organic Waste',
+        routeName: '2712-Ewa-01',
+        isOptimized: true,
+        isConfirmed: false,
+        steps: [
+          {
+            stepNumber: 1,
+            stepLabel: '01',
+            status: 'Active',
+            description: 'Dedigamuwa to Ranala Junction Road',
+            coordinates: [
+              { lat: 6.8851, lng: 80.0154, stopName: 'Dedigamuwa Stop A' },
+              { lat: 6.892, lng: 80.018, stopName: 'Ranala Approach' },
+            ],
+          },
+          {
+            stepNumber: 2,
+            stepLabel: '02',
+            status: 'Pending',
+            description: 'Ranala Main Collection Hub',
+            coordinates: [
+              { lat: 6.9152, lng: 80.0214, stopName: 'Ranala Central' },
+              { lat: 6.911, lng: 80.038, stopName: 'River Connection' },
+            ],
+          },
+          {
+            stepNumber: 3,
+            stepLabel: '03',
+            status: 'Pending',
+            description: 'Embulgama River Bank Waypoint',
+            coordinates: [
+              { lat: 6.8853, lng: 80.0542, stopName: 'Embulgama Central' },
+              { lat: 6.881, lng: 80.051, stopName: 'Embulgama South' },
+            ],
+          },
+          {
+            stepNumber: 4,
+            stepLabel: '04',
+            status: 'Pending',
+            description: 'Jalthara Crossway to Artigala',
+            coordinates: [
+              { lat: 6.8784, lng: 80.0451, stopName: 'Jalthara Crossing' },
+              { lat: 6.8724, lng: 80.0381, stopName: 'Artigala Junction' },
+            ],
+          },
+          {
+            stepNumber: 5,
+            stepLabel: '05',
+            status: 'Pending',
+            description: 'Hanwella Town & Bus Stand Terminal',
+            coordinates: [
+              { lat: 6.8925, lng: 80.0835, stopName: 'Hanwella Bus Stand' },
+              { lat: 6.8912, lng: 80.0812, stopName: 'Hanwella Town Center' },
+            ],
+          },
+        ],
+      },
+      {
+        category: 'Plastic',
+        routeName: '2712-Pla-01',
+        isOptimized: true,
+        isConfirmed: false,
+        steps: [
+          {
+            stepNumber: 1,
+            stepLabel: '01',
+            status: 'Active',
+            description: 'Dehiwala Marine Drive Collection Point',
+            coordinates: [{ lat: 6.8524, lng: 79.8654, stopName: 'Dehiwala Beach Rd' }],
+          },
+          {
+            stepNumber: 2,
+            stepLabel: '02',
+            status: 'Pending',
+            description: 'Galle Road Commercial Strip',
+            coordinates: [{ lat: 6.8421, lng: 79.8642, stopName: 'Galle Rd Stop 1' }],
+          },
+          {
+            stepNumber: 3,
+            stepLabel: '03',
+            status: 'Pending',
+            description: 'Mount Lavinia Hotel Approach',
+            coordinates: [{ lat: 6.8372, lng: 79.8631, stopName: 'Mount Lavinia Coast' }],
+          },
+          {
+            stepNumber: 4,
+            stepLabel: '04',
+            status: 'Pending',
+            description: 'Templers Road Hub',
+            coordinates: [{ lat: 6.845, lng: 79.871, stopName: 'Templers Road' }],
+          },
+          {
+            stepNumber: 5,
+            stepLabel: '05',
+            status: 'Pending',
+            description: 'Attidiya Sanctuary Road',
+            coordinates: [{ lat: 6.849, lng: 79.882, stopName: 'Attidiya Depot' }],
+          },
+        ],
+      },
+      {
+        category: 'Paper',
+        routeName: '2712-Pap-01',
+        isOptimized: true,
+        isConfirmed: false,
+        steps: [
+          {
+            stepNumber: 1,
+            stepLabel: '01',
+            status: 'Active',
+            description: 'Nawagamuwa Primary Depot',
+            coordinates: [{ lat: 6.9242, lng: 80.0051, stopName: 'Nawagamuwa Shrine Rd' }],
+          },
+          {
+            stepNumber: 2,
+            stepLabel: '02',
+            status: 'Pending',
+            description: 'Ranala Junction Commercial Zone',
+            coordinates: [{ lat: 6.9152, lng: 80.0214, stopName: 'Ranala Market' }],
+          },
+          {
+            stepNumber: 3,
+            stepLabel: '03',
+            status: 'Pending',
+            description: 'Kaduwela Border Connection',
+            coordinates: [{ lat: 6.928, lng: 79.985, stopName: 'Kaduwela Link' }],
+          },
+          {
+            stepNumber: 4,
+            stepLabel: '04',
+            status: 'Pending',
+            description: 'Low Level Road Waypoint',
+            coordinates: [{ lat: 6.932, lng: 79.972, stopName: 'Low Level Stop' }],
+          },
+          {
+            stepNumber: 5,
+            stepLabel: '05',
+            status: 'Pending',
+            description: 'Malabe Recycle Terminal',
+            coordinates: [{ lat: 6.904, lng: 79.954, stopName: 'Malabe Depot' }],
+          },
+        ],
+      },
+      {
+        category: 'Chatbot',
+        routeName: '2712-Chat-01',
+        isOptimized: true,
+        isConfirmed: false,
+        steps: [
+          {
+            stepNumber: 1,
+            stepLabel: '01',
+            status: 'Active',
+            description: 'Reported Location 1 (Inosuke Trash Report)',
+            coordinates: [{ lat: 6.8421, lng: 79.8642, stopName: 'Galle Rd Reported Spot' }],
+          },
+          {
+            stepNumber: 2,
+            stepLabel: '02',
+            status: 'Pending',
+            description: 'Reported Location 2 (Nezuko Pin)',
+            coordinates: [{ lat: 6.8524, lng: 79.8654, stopName: 'Dehiwala Junction Pin' }],
+          },
+          {
+            stepNumber: 3,
+            stepLabel: '03',
+            status: 'Pending',
+            description: 'Reported Location 3 (Zenitsu Report)',
+            coordinates: [{ lat: 6.8372, lng: 79.8631, stopName: 'Mount Lavinia Beach Pin' }],
+          },
+          {
+            stepNumber: 4,
+            stepLabel: '04',
+            status: 'Pending',
+            description: 'Reported Location 4 (Artigala Resident Alert)',
+            coordinates: [{ lat: 6.8724, lng: 80.0381, stopName: 'Artigala Village Spot' }],
+          },
+          {
+            stepNumber: 5,
+            stepLabel: '05',
+            status: 'Pending',
+            description: 'Central Sorting Depot Arrival',
+            coordinates: [{ lat: 6.8912, lng: 80.0812, stopName: 'Hanwella Main Processing' }],
+          },
+        ],
+      },
+    ];
+    await RoutePlan.insertMany(routePlansToInsert);
+    console.log(`Seeded ${routePlansToInsert.length} RoutePlans.`);
+
+    // 11. Seed App Users (Users.png)
+    console.log('Seeding App Users (Users.png)...');
+    const appUsersToInsert = [
+      {
+        userId: 'VI-123',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-123',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 100,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-321',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-321',
+        category: 'Organic Waste',
+        status: 'Offline',
+        lastUpdated: '2 min ago',
+        percentage: 20,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-456',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-456',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 50,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-756',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-756',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 80,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-568',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-568',
+        category: 'Organic Waste',
+        status: 'Offline',
+        lastUpdated: '2 min ago',
+        percentage: 65,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-156',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-156',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 71,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-556',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-556',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 90,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-459',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-459',
+        category: 'Organic Waste',
+        status: 'Offline',
+        lastUpdated: '2 min ago',
+        percentage: 20,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-470',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-470',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 45,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-469',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-469',
+        category: 'Organic Waste',
+        status: 'Online',
+        lastUpdated: '2 min ago',
+        percentage: 83,
+        location: 'Galle Rd',
+      },
+      {
+        userId: 'VI-201',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-201',
+        category: 'Plastic',
+        status: 'Online',
+        lastUpdated: '5 min ago',
+        percentage: 92,
+        location: 'Dehiwala',
+      },
+      {
+        userId: 'VI-202',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-202',
+        category: 'Plastic',
+        status: 'Offline',
+        lastUpdated: '10 min ago',
+        percentage: 34,
+        location: 'Mount Lavinia',
+      },
+      {
+        userId: 'VI-301',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-301',
+        category: 'Paper',
+        status: 'Online',
+        lastUpdated: '3 min ago',
+        percentage: 78,
+        location: 'Nawagamuwa',
+      },
+      {
+        userId: 'VI-302',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-302',
+        category: 'Paper',
+        status: 'Online',
+        lastUpdated: '15 min ago',
+        percentage: 60,
+        location: 'Ranala',
+      },
+      {
+        userId: 'VI-401',
+        email: 's@gmail.com',
+        assignedBinId: 'VI-401',
+        category: 'Chatbot',
+        status: 'Online',
+        lastUpdated: 'Just now',
+        percentage: 88,
+        location: 'Hanwella',
+      },
+    ];
+    await AppUser.insertMany(appUsersToInsert);
+    console.log(`Seeded ${appUsersToInsert.length} AppUsers.`);
+
     console.log('--------------------------------------------------');
-    console.log('SUCCESS: All data (including Chatbot & Drivers) seeded!');
+    console.log('SUCCESS: All data (including Notifications, Routes & Users) seeded!');
     console.log('Default Admin Account: admin / admin123');
     console.log('--------------------------------------------------');
 
@@ -969,6 +1403,9 @@ const destroyData = async () => {
       ReportMetric.deleteMany(),
       VehicleHistory.deleteMany(),
       ChatMessage.deleteMany(),
+      Notification.deleteMany(),
+      RoutePlan.deleteMany(),
+      AppUser.deleteMany(),
     ]);
     console.log('All data destroyed.');
     process.exit(0);

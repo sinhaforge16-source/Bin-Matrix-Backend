@@ -20,3 +20,4 @@ router.post('/messages', sendChatMessage);
 router.get('/messages/:userId', getChatMessagesByUserId);
 
 module.exports = router;
+

@@ -32,7 +32,10 @@ app.get('/', (req, res) => {
       drivers: '/api/drivers',
       trucks: '/api/trucks',
       chat: '/api/chat/threads',
+      notifications: '/api/notifications',
       routes: '/api/routes',
+      optimizedRoute: '/api/routes/optimized',
+      appUsers: '/api/app-users',
       users: '/api/users',
     },
   });
@@ -46,7 +49,9 @@ app.use('/api/bins', require('./routes/binRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/trucks', require('./routes/truckRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/routes', require('./routes/routeRoutes'));
+app.use('/api/app-users', require('./routes/appUserRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 
 // 404 & Error Handler Middlewares

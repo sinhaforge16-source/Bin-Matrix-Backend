@@ -24,6 +24,18 @@ Production-ready Node.js, Express, and MongoDB (MERN) backend for the **Bin Matr
     - `Overflowing` (Critical Bins)
     - `Priority` (Priority Bins)
   - Provides GPS map pins populated with realistic coordinates around Hanwella, Nawagamuwa, Dedigamuwa, Artigala, and Dehiwala-Mount Lavinia.
+  - Supports status query filtering: `?status=Online`, `?status=Offline`, `?status=Online Bins`, and `?status=Offline Bins`.
+- **System Notifications (`/api/notifications`)**:
+  - Categorized alert system matching `Notification.png` (`All`, `Routes`, `Trucks`, `Drivers`, `Bins`).
+  - Action routing with targets (e.g. `View Truck`, `View Driver`, `View Bin`, `View Chat`, `View Route`).
+  - Single and bulk read tracking (`PATCH /:id/read`, `PATCH /read-all`).
+- **Route Optimization (`/api/routes/optimized`, `/api/routes/confirm`)**:
+  - Step-by-step optimization sequence (steps `01` through `05`) matching `Routes1.png` and `Routes2.png`.
+  - Full route path coordinates for Sri Lankan corridors (Dedigamuwa → Ranala → Embulgama → Artigala → Hanwella).
+  - One-click route confirmation (`POST /confirm`) with automated notification triggers.
+- **User Management Table (`/api/app-users`)**:
+  - Full CRUD operations matching `Users.png` with fields: `userId` (`VI-123`), `email`, `assignedBinId`, `status`, `percentage`, `location`, `lastUpdated`.
+  - Returns `availableBins` list for instant frontend dropdown selection.
 - **Full CRUD Endpoints with Advanced Filters**:
   - Bins (`/api/bins` with `?category=Paper`, `?capacityStatus=Almost Full`, `?isPriority=true`, `?status=Online`).
   - Drivers (`/api/drivers`)
@@ -42,29 +54,40 @@ Bin-Matrix-Backend/
 ├── config/
 │   └── db.js                 # MongoDB connection logic
 ├── controllers/
+│   ├── appUserController.js   # User management for Users.png
 │   ├── authController.js      # Auth logic (register, login, getMe)
 │   ├── binController.js       # Bins CRUD, filtering & map monitoring summary
+│   ├── chatController.js      # Chat threads, messages & map pins
 │   ├── dashboardController.js # Aggregations for Home.png dashboard
 │   ├── driverController.js    # Drivers CRUD & category filtering
+│   ├── notificationController.js # Notifications alerts & read tracking
 │   ├── reportController.js    # Historical analytics for Detailed Reports
-│   ├── routeController.js     # Routes management & assignments
-│   ├── truckController.js     # Trucks fleet management
+│   ├── routeController.js     # Routes management & route optimization
+│   ├── truckController.js     # Fleet vehicles & history management
 │   └── userController.js      # Users management
 ├── middleware/
 │   ├── authMiddleware.js      # JWT verification & role authorization
 │   └── errorMiddleware.js     # 404 & centralized error handler
 ├── models/
+│   ├── AppUser.js             # User management schema (Users.png)
 │   ├── Bin.js                 # Bin schema (binId, category, status, fillLevel, capacityStatus, isPriority, GPS)
+│   ├── ChatMessage.js         # Chat message schema with map pins & photo attachments
 │   ├── Driver.js              # Driver schema (name, driverId, category, isPresentToday, isAllocated)
+│   ├── Notification.js        # Notification alerts schema (Routes, Trucks, Drivers, Bins)
 │   ├── ReportMetric.js        # Analytics schema (category, date, onTime, late, notCleaned, fuel, distance)
 │   ├── Route.js               # Route schema (routeName, area, assignedTruck, assignedDriver, status)
+│   ├── RoutePlan.js           # Route optimization steps schema (Routes1.png & Routes2.png)
 │   ├── Truck.js               # Truck schema (truckNumber, category, status, isIdle, distance, fuel)
-│   └── User.js                # User schema (username, password, role, email)
+│   ├── User.js                # System user schema (username, password, role, email)
+│   └── VehicleHistory.js      # Granular timeline activity logs schema
 ├── routes/
+│   ├── appUserRoutes.js       # /api/app-users
 │   ├── authRoutes.js          # /api/auth
 │   ├── binRoutes.js           # /api/bins
+│   ├── chatRoutes.js          # /api/chat
 │   ├── dashboardRoutes.js     # /api/dashboard
 │   ├── driverRoutes.js        # /api/drivers
+│   ├── notificationRoutes.js  # /api/notifications
 │   ├── reportRoutes.js        # /api/reports
 │   ├── routeRoutes.js         # /api/routes
 │   ├── truckRoutes.js         # /api/trucks
@@ -181,7 +204,7 @@ Bin-Matrix-Backend/
 | `POST` | `/api/chat/messages` | Send message/image/location and trigger automated bot replies | Public |
 | `GET` | `/api/chat/map-pins` | Reported bin coordinates for Chat Map view (`Chat map.png`) | Public |
 
-### 6. Vehicles & Fleet Monitoring (`/api/trucks`)
+### 7. Vehicles & Fleet Monitoring (`/api/trucks`)
 - Query parameters: `?category=Organic%20Waste&status=Online&isIdle=false&search=VI-123`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
@@ -193,17 +216,39 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/trucks/:id` | Update vehicle | Public/Protected |
 | `DELETE` | `/api/trucks/:id` | Delete vehicle | Public/Protected |
 
-### 7. Routes (`/api/routes`)
+### 8. Route Optimization & Management (`/api/routes`)
 - Query parameters: `?category=Plastic&status=In%20Progress&area=Galle`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
+| `GET` | `/api/routes/optimized?category=Organic%20Waste` | Step-by-step optimization (steps `01` to `05`) matching `Routes1.png` & `Routes2.png` | Public |
+| `POST` | `/api/routes/confirm` | Confirm route plan and trigger system notification | Public |
 | `GET` | `/api/routes` | List routes with populated truck, driver, and bins | Public |
 | `GET` | `/api/routes/:id` | Get single route details | Public |
 | `POST` | `/api/routes` | Create new route | Public/Protected |
 | `PUT` | `/api/routes/:id` | Update route | Public/Protected |
 | `DELETE` | `/api/routes/:id` | Delete route | Public/Protected |
 
-### 8. Users (`/api/users`)
+### 9. System Notifications (`/api/notifications`)
+- Query parameters: `?category=Routes` (supports `All`, `Routes`, `Trucks`, `Drivers`, `Bins`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/notifications?category=All` | List alerts with action type, target ID, time ago matching `Notification.png` | Public |
+| `PATCH` | `/api/notifications/:id/read` | Mark single notification as read | Public |
+| `PATCH` | `/api/notifications/read-all` | Mark all notifications as read | Public |
+| `POST` | `/api/notifications` | Manually dispatch a new notification | Public/Protected |
+| `DELETE` | `/api/notifications/:id` | Delete notification | Public/Protected |
+
+### 10. User Management Table (`/api/app-users`)
+- Query parameters: `?category=Organic%20Waste&status=Online&search=VI-123`
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/app-users?category=Organic%20Waste` | List users table with assigned bins, online status, percentages & available bins matching `Users.png` | Public |
+| `GET` | `/api/app-users/:id` | Get app user details by MongoDB _id or `userId` | Public |
+| `POST` | `/api/app-users` | Add/Create new app user | Public |
+| `PUT` | `/api/app-users/:id` | Update user (inline assigned bin dropdown or status change) | Public |
+| `DELETE` | `/api/app-users/:id` | Delete app user | Public |
+
+### 11. System Users & RBAC (`/api/users`)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | `GET` | `/api/users` | List system users | Protected |
