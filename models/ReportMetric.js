@@ -51,3 +51,4 @@ const reportMetricSchema = new mongoose.Schema(
 reportMetricSchema.index({ category: 1, date: 1 });
 
 module.exports = mongoose.model('ReportMetric', reportMetricSchema);
+

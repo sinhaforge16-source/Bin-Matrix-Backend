@@ -13,3 +13,4 @@ router.get('/analytics', getReportAnalytics);
 router.route('/').get(getAllReportMetrics).post(createReportMetric);
 
 module.exports = router;
+

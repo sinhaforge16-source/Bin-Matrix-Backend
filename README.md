@@ -173,15 +173,17 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/drivers/:id` | Update driver | Public/Protected |
 | `DELETE` | `/api/drivers/:id` | Delete driver | Public/Protected |
 
-### 6. Trucks (`/api/trucks`)
-- Query parameters: `?category=Plastic&status=Online&isIdle=false`
+### 6. Vehicles & Fleet Monitoring (`/api/trucks`)
+- Query parameters: `?category=Organic%20Waste&status=Online&isIdle=false&search=VI-123`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| `GET` | `/api/trucks` | List trucks with populated driver & route | Public |
-| `GET` | `/api/trucks/:id` | Get truck by _id or `truckNumber` | Public |
-| `POST` | `/api/trucks` | Create truck | Public/Protected |
-| `PUT` | `/api/trucks/:id` | Update truck | Public/Protected |
-| `DELETE` | `/api/trucks/:id` | Delete truck | Public/Protected |
+| `GET` | `/api/trucks` | List vehicles with drivers, routes, speeds, status | Public |
+| `GET` | `/api/trucks/:vehicleId` | Full vehicle details, live location, today's summary & route progress | Public |
+| `GET` | `/api/trucks/:vehicleId/history?fromDate=...&toDate=...` | Granular time-period logs across dates with empty-gap handling | Public |
+| `POST` | `/api/trucks/:vehicleId/history` | Create vehicle history record | Protected |
+| `POST` | `/api/trucks` | Create new vehicle | Public/Protected |
+| `PUT` | `/api/trucks/:id` | Update vehicle | Public/Protected |
+| `DELETE` | `/api/trucks/:id` | Delete vehicle | Public/Protected |
 
 ### 7. Routes (`/api/routes`)
 - Query parameters: `?category=Plastic&status=In%20Progress&area=Galle`
