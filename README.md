@@ -163,15 +163,23 @@ Bin-Matrix-Backend/
 |---|---|---|---|
 | `GET` | `/api/dashboard/summary` | High-level metrics matching `Home.png` | Public |
 
-### 5. Drivers (`/api/drivers`)
-- Query parameters: `?category=Paper&isPresentToday=true&isAllocated=false`
+### 5. Driver Management (`/api/drivers`)
+- Query parameters: `?category=Organic%20Waste&search=Kamal`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| `GET` | `/api/drivers` | List drivers with filtering | Public |
-| `GET` | `/api/drivers/:id` | Get driver by _id or `driverId` | Public |
-| `POST` | `/api/drivers` | Create driver | Public/Protected |
-| `PUT` | `/api/drivers/:id` | Update driver | Public/Protected |
+| `GET` | `/api/drivers` | List drivers with masked passwords, mobile, email | Public |
+| `GET` | `/api/drivers/:id` | Get driver by MongoDB _id or `driverId` | Public |
+| `POST` | `/api/drivers` | Create/Add new driver | Public/Protected |
+| `PUT` | `/api/drivers/:id` | Update driver details (inline edits) | Public/Protected |
 | `DELETE` | `/api/drivers/:id` | Delete driver | Public/Protected |
+
+### 6. Chatbot Assistant & Location Alert Pins (`/api/chat`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/chat/threads` | User threads with latest messages & online status | Public |
+| `GET` | `/api/chat/messages/:userId` | Full conversation history with image & location pins | Public |
+| `POST` | `/api/chat/messages` | Send message/image/location and trigger automated bot replies | Public |
+| `GET` | `/api/chat/map-pins` | Reported bin coordinates for Chat Map view (`Chat map.png`) | Public |
 
 ### 6. Vehicles & Fleet Monitoring (`/api/trucks`)
 - Query parameters: `?category=Organic%20Waste&status=Online&isIdle=false&search=VI-123`

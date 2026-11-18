@@ -31,6 +31,7 @@ app.get('/', (req, res) => {
       binMonitoring: '/api/bins/monitoring-summary',
       drivers: '/api/drivers',
       trucks: '/api/trucks',
+      chat: '/api/chat/threads',
       routes: '/api/routes',
       users: '/api/users',
     },
@@ -44,6 +45,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/bins', require('./routes/binRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/trucks', require('./routes/truckRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/routes', require('./routes/routeRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 

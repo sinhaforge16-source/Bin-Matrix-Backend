@@ -72,3 +72,4 @@ const vehicleHistorySchema = new mongoose.Schema(
 vehicleHistorySchema.index({ vehicleId: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('VehicleHistory', vehicleHistorySchema);
+

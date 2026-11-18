@@ -1,5 +1,15 @@
 const Driver = require('../models/Driver');
 
+// Helper to normalize category regex
+const normalizeCategoryRegex = (cat) => {
+  if (!cat) return null;
+  const trimmed = cat.trim();
+  if (trimmed.toLowerCase().includes('organic')) {
+    return /^Organic\s+Waste$/i;
+  }
+  return new RegExp(`^${trimmed}$`, 'i');
+};
+
 // @desc    Get all drivers with filtering and pagination
 // @route   GET /api/drivers
 // @access  Public
@@ -18,22 +28,24 @@ const getDrivers = async (req, res, next) => {
     const query = {};
 
     if (category) {
-      query.category = category;
+      query.category = normalizeCategoryRegex(category);
     }
 
     if (isPresentToday !== undefined) {
-      query.isPresentToday = isPresentToday === 'true';
+      query.isPresentToday = isPresentToday === 'true' || isPresentToday === true;
     }
 
     if (isAllocated !== undefined) {
-      query.isAllocated = isAllocated === 'true';
+      query.isAllocated = isAllocated === 'true' || isAllocated === true;
     }
 
     if (search) {
       query.$or = [
+        { driverName: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } },
         { driverId: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
+        { mobileNumber: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
       ];
     }
@@ -45,13 +57,29 @@ const getDrivers = async (req, res, next) => {
       Driver.countDocuments(query),
     ]);
 
+    // Format driver objects to match Driver1.png / Driver2.png table columns
+    const formattedDrivers = drivers.map((d) => ({
+      _id: d._id,
+      driverId: d.driverId,
+      driverName: d.driverName || d.name,
+      name: d.name || d.driverName,
+      category: d.category,
+      mobileNumber: d.mobileNumber || d.phone,
+      phone: d.phone || d.mobileNumber,
+      email: d.email,
+      password: '••••••••••',
+      isPresentToday: d.isPresentToday,
+      isAllocated: d.isAllocated,
+      createdAt: d.createdAt,
+    }));
+
     res.json({
       success: true,
-      count: drivers.length,
+      count: formattedDrivers.length,
       total,
       totalPages: Math.ceil(total / Number(limit)),
       currentPage: Number(page),
-      data: drivers,
+      data: formattedDrivers,
     });
   } catch (error) {
     next(error);
@@ -70,7 +98,7 @@ const getDriverById = async (req, res, next) => {
       driver = await Driver.findById(id);
     }
     if (!driver) {
-      driver = await Driver.findOne({ driverId: id });
+      driver = await Driver.findOne({ driverId: new RegExp(`^${id}$`, 'i') });
     }
 
     if (!driver) {
@@ -82,66 +110,112 @@ const getDriverById = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: driver,
+      data: {
+        _id: driver._id,
+        driverId: driver.driverId,
+        driverName: driver.driverName || driver.name,
+        name: driver.name || driver.driverName,
+        category: driver.category,
+        mobileNumber: driver.mobileNumber || driver.phone,
+        phone: driver.phone || driver.mobileNumber,
+        email: driver.email,
+        password: '••••••••••',
+        isPresentToday: driver.isPresentToday,
+        isAllocated: driver.isAllocated,
+        createdAt: driver.createdAt,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Create a new driver
+// @desc    Create a new driver (Add Driver in Driver2.png)
 // @route   POST /api/drivers
-// @access  Private
+// @access  Public
 const createDriver = async (req, res, next) => {
   try {
-    const { name, driverId, category, isPresentToday, isAllocated, phone, email } =
-      req.body;
+    const {
+      name,
+      driverName,
+      driverId,
+      category,
+      isPresentToday,
+      isAllocated,
+      phone,
+      mobileNumber,
+      email,
+      password,
+    } = req.body;
 
-    const existingDriver = await Driver.findOne({ driverId });
+    const chosenName = driverName || name;
+    if (!chosenName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Driver name is required',
+      });
+    }
+
+    // Auto-generate or format driverId (e.g. DRI-123)
+    let chosenId = driverId;
+    if (!chosenId) {
+      const count = await Driver.countDocuments();
+      chosenId = `DRI-${100 + count + 1}`;
+    }
+
+    const existingDriver = await Driver.findOne({ driverId: chosenId });
     if (existingDriver) {
       return res.status(400).json({
         success: false,
-        message: `Driver with ID ${driverId} already exists`,
+        message: `Driver with ID ${chosenId} already exists`,
       });
     }
 
     const driver = await Driver.create({
-      name,
-      driverId,
-      category,
+      driverId: chosenId,
+      driverName: chosenName,
+      name: chosenName,
+      category: category || 'Organic Waste',
+      mobileNumber: mobileNumber || phone || '+94 123 456 789',
+      phone: phone || mobileNumber || '+94 123 456 789',
+      email: email || 's@gmail.com',
+      password: password || 'admin123',
       isPresentToday: isPresentToday !== undefined ? isPresentToday : true,
       isAllocated: isAllocated !== undefined ? isAllocated : false,
-      phone,
-      email,
     });
 
     res.status(201).json({
       success: true,
-      data: driver,
+      data: {
+        _id: driver._id,
+        driverId: driver.driverId,
+        driverName: driver.driverName,
+        name: driver.name,
+        category: driver.category,
+        mobileNumber: driver.mobileNumber,
+        email: driver.email,
+        password: '••••••••••',
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Update driver
+// @desc    Update driver (inline edits for name, mobile, email, password)
 // @route   PUT /api/drivers/:id
-// @access  Private
+// @access  Public
 const updateDriver = async (req, res, next) => {
   try {
     const { id } = req.params;
-    let query = {};
+    let driver;
 
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      query._id = id;
-    } else {
-      query.driverId = id;
+      driver = await Driver.findById(id);
     }
-
-    const driver = await Driver.findOneAndUpdate(query, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    if (!driver) {
+      driver = await Driver.findOne({ driverId: new RegExp(`^${id}$`, 'i') });
+    }
 
     if (!driver) {
       return res.status(404).json({
@@ -150,9 +224,46 @@ const updateDriver = async (req, res, next) => {
       });
     }
 
+    // Apply updates
+    if (req.body.driverName) {
+      driver.driverName = req.body.driverName;
+      driver.name = req.body.driverName;
+    } else if (req.body.name) {
+      driver.name = req.body.name;
+      driver.driverName = req.body.name;
+    }
+
+    if (req.body.mobileNumber) {
+      driver.mobileNumber = req.body.mobileNumber;
+      driver.phone = req.body.mobileNumber;
+    } else if (req.body.phone) {
+      driver.phone = req.body.phone;
+      driver.mobileNumber = req.body.phone;
+    }
+
+    if (req.body.email) driver.email = req.body.email;
+    if (req.body.category) driver.category = req.body.category;
+    if (req.body.isPresentToday !== undefined) driver.isPresentToday = req.body.isPresentToday;
+    if (req.body.isAllocated !== undefined) driver.isAllocated = req.body.isAllocated;
+
+    if (req.body.password && !req.body.password.includes('••')) {
+      driver.password = req.body.password;
+    }
+
+    const updated = await driver.save();
+
     res.json({
       success: true,
-      data: driver,
+      data: {
+        _id: updated._id,
+        driverId: updated.driverId,
+        driverName: updated.driverName,
+        name: updated.name,
+        category: updated.category,
+        mobileNumber: updated.mobileNumber,
+        email: updated.email,
+        password: '••••••••••',
+      },
     });
   } catch (error) {
     next(error);
@@ -161,7 +272,7 @@ const updateDriver = async (req, res, next) => {
 
 // @desc    Delete driver
 // @route   DELETE /api/drivers/:id
-// @access  Private
+// @access  Public
 const deleteDriver = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -170,7 +281,7 @@ const deleteDriver = async (req, res, next) => {
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       query._id = id;
     } else {
-      query.driverId = id;
+      query.driverId = new RegExp(`^${id}$`, 'i');
     }
 
     const driver = await Driver.findOneAndDelete(query);
@@ -184,7 +295,7 @@ const deleteDriver = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `Driver ${driver.name} (${driver.driverId}) deleted successfully`,
+      message: `Driver ${driver.driverName || driver.name} (${driver.driverId}) deleted successfully`,
       data: {},
     });
   } catch (error) {
@@ -199,4 +310,3 @@ module.exports = {
   updateDriver,
   deleteDriver,
 };
-

@@ -13,6 +13,7 @@ const Truck = require('./models/Truck');
 const Route = require('./models/Route');
 const ReportMetric = require('./models/ReportMetric');
 const VehicleHistory = require('./models/VehicleHistory');
+const ChatMessage = require('./models/ChatMessage');
 
 // Connect to DB
 const connectDB = async () => {
@@ -56,6 +57,7 @@ const importData = async () => {
       Route.deleteMany(),
       ReportMetric.deleteMany(),
       VehicleHistory.deleteMany(),
+      ChatMessage.deleteMany(),
     ]);
 
     // 1. Seed Users (Default Admin & Staff)
@@ -85,7 +87,7 @@ const importData = async () => {
     ]);
     console.log(`Created ${users.length} users (Admin: admin / admin123)`);
 
-    // 2. Seed Bins
+    // 2. Seed Bins (123 total matching Home.png)
     console.log('Seeding Bins (123 total to match 120 Online / 3 Offline)...');
     const specificDesignBins = [
       { binId: 'Deh-2213-Ai', category: 'Paper', fillLevel: 80, status: 'Online', location: 'Galle Rd', capacityStatus: 'Almost Full', isPriority: true, lat: 6.8421, lng: 79.8642 },
@@ -184,22 +186,29 @@ const importData = async () => {
     const createdBins = await Bin.insertMany(binsToInsert);
     console.log(`Seeded ${createdBins.length} bins.`);
 
-    // 3. Seed Drivers (100 per category = 300 total)
-    console.log('Seeding Drivers (100 per category = 300 total)...');
+    // 3. Seed Drivers (Matching Driver1.png and Driver2.png)
+    console.log('Seeding Drivers (matching Driver1.png & 100 per category for Dashboard)...');
     const driversToInsert = [];
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
     categories.forEach((cat) => {
       const prefix = cat.substring(0, 3).toUpperCase();
       for (let i = 1; i <= 100; i++) {
         const isPresentToday = i <= 94;
         const isAllocated = i <= 90;
+        const isDesignDriver = (cat === 'Organic waste' || cat === 'Organic Waste') && i <= 8;
+
         driversToInsert.push({
-          name: i === 1 ? 'G. Kamal' : `Driver ${prefix}-${i}`,
-          driverId: `DRI-${prefix}-${String(i).padStart(3, '0')}`,
+          driverId: isDesignDriver ? `DRI-123` + (i > 1 ? `-${i}` : '') : `DRI-${prefix}-${String(i).padStart(3, '0')}`,
+          driverName: isDesignDriver ? 'G.Kamal' : (i === 1 ? 'G. Kamal' : `Driver ${prefix}-${i}`),
+          name: isDesignDriver ? 'G.Kamal' : (i === 1 ? 'G. Kamal' : `Driver ${prefix}-${i}`),
           category: cat,
           isPresentToday,
           isAllocated,
-          phone: `+94 77 ${100000 + i}`,
-          email: `driver.${prefix.toLowerCase()}${i}@binmatrix.com`,
+          mobileNumber: isDesignDriver ? '+94 123 456 789' : `+94 77 ${100000 + i}`,
+          phone: isDesignDriver ? '+94 123 456 789' : `+94 77 ${100000 + i}`,
+          email: isDesignDriver ? 's@gmail.com' : `driver.${prefix.toLowerCase()}${i}@binmatrix.com`,
+          password: hashedPassword,
         });
       }
     });
@@ -241,13 +250,14 @@ const importData = async () => {
           missedBins: 0,
           completionPercentage: 61.5,
           routeCoordinates: [
-            { lat: 6.8851, lng: 80.0154, segmentStatus: 'Completed' }, // Dedigamuwa
-            { lat: 6.9152, lng: 80.0214, segmentStatus: 'Completed' }, // Ranala
-            { lat: 6.9110, lng: 80.0380, segmentStatus: 'In Progress' }, // river road
-            { lat: 6.9050, lng: 80.0550, segmentStatus: 'Pending' },     // Embulgama
-            { lat: 6.8925, lng: 80.0835, segmentStatus: 'Pending' },     // Hanwella Bus Stand
+            { lat: 6.8851, lng: 80.0154, segmentStatus: 'Completed' },
+            { lat: 6.9152, lng: 80.0214, segmentStatus: 'Completed' },
+            { lat: 6.9110, lng: 80.0380, segmentStatus: 'In Progress' },
+            { lat: 6.9050, lng: 80.0550, segmentStatus: 'Pending' },
+            { lat: 6.8925, lng: 80.0835, segmentStatus: 'Pending' },
           ],
         },
+        lastUpdated: new Date(),
       },
       {
         vehicleId: 'VI-321',
@@ -282,6 +292,7 @@ const importData = async () => {
           completionPercentage: 15.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 3600000),
       },
       {
         vehicleId: 'VI-456',
@@ -316,6 +327,7 @@ const importData = async () => {
           completionPercentage: 40.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 120000),
       },
       {
         vehicleId: 'VI-756',
@@ -350,6 +362,7 @@ const importData = async () => {
           completionPercentage: 60.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 60000),
       },
       {
         vehicleId: 'VI-568',
@@ -384,6 +397,7 @@ const importData = async () => {
           completionPercentage: 58.3,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 180000),
       },
       {
         vehicleId: 'VI-156',
@@ -418,6 +432,7 @@ const importData = async () => {
           completionPercentage: 8.3,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 4500000),
       },
       {
         vehicleId: 'VI-556',
@@ -452,6 +467,7 @@ const importData = async () => {
           completionPercentage: 50.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 120000),
       },
       {
         vehicleId: 'VI-459',
@@ -486,6 +502,7 @@ const importData = async () => {
           completionPercentage: 30.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 60000),
       },
       {
         vehicleId: 'VI-470',
@@ -520,13 +537,13 @@ const importData = async () => {
           completionPercentage: 40.0,
           routeCoordinates: [],
         },
+        lastUpdated: new Date(Date.now() - 120000),
       },
     ];
 
     const trucksToInsert = [...specificVehicles];
     const usedTruckNumbers = new Set(specificVehicles.map((v) => v.vehicleId));
 
-    // Fill remaining trucks to support Home.png aggregations (123 trucks per category = 369 total)
     categories.forEach((cat) => {
       const prefix = cat.substring(0, 3).toUpperCase();
       const distancePerTruck = 900 / 123;
@@ -556,6 +573,7 @@ const importData = async () => {
               idleTimeMinutes: 10,
               offlineTimeMinutes: 10,
             },
+            lastUpdated: new Date(Date.now() - (i + 10) * 60000),
           });
         }
       }
@@ -614,7 +632,6 @@ const importData = async () => {
     // 6. Seed Monthly Report Metrics (Matching Detailed Reports.png)
     console.log('Seeding Monthly Report Metrics for Detailed Reports...');
     const reportMetricsData = [
-      // Plastic (Direct figures from Detailed Reports.png)
       { category: 'Plastic', date: '14/10/2025', cleanedOnTime: 95, cleanedLate: 50, notCleaned: 45, fuelConsumptionLiters: 8.5, distanceTravelledKm: 192.92 },
       { category: 'Plastic', date: '24/10/2025', cleanedOnTime: 65, cleanedLate: 45, notCleaned: 55, fuelConsumptionLiters: 10.0, distanceTravelledKm: 120.50 },
       { category: 'Plastic', date: '01/11/2025', cleanedOnTime: 45, cleanedLate: 25, notCleaned: 20, fuelConsumptionLiters: 13.5, distanceTravelledKm: 95.00 },
@@ -622,8 +639,6 @@ const importData = async () => {
       { category: 'Plastic', date: '08/11/2025', cleanedOnTime: 120, cleanedLate: 55, notCleaned: 50, fuelConsumptionLiters: 20.0, distanceTravelledKm: 140.00 },
       { category: 'Plastic', date: '11/11/2025', cleanedOnTime: 25, cleanedLate: 15, notCleaned: 15, fuelConsumptionLiters: 9.0, distanceTravelledKm: 190.00 },
       { category: 'Plastic', date: '14/11/2025', cleanedOnTime: 90, cleanedLate: 50, notCleaned: 45, fuelConsumptionLiters: 23.0, distanceTravelledKm: 210.00 },
-
-      // Paper
       { category: 'Paper', date: '14/10/2025', cleanedOnTime: 85, cleanedLate: 40, notCleaned: 35, fuelConsumptionLiters: 7.5, distanceTravelledKm: 165.00 },
       { category: 'Paper', date: '24/10/2025', cleanedOnTime: 70, cleanedLate: 30, notCleaned: 25, fuelConsumptionLiters: 9.0, distanceTravelledKm: 140.00 },
       { category: 'Paper', date: '01/11/2025', cleanedOnTime: 50, cleanedLate: 20, notCleaned: 15, fuelConsumptionLiters: 11.5, distanceTravelledKm: 110.00 },
@@ -631,8 +646,6 @@ const importData = async () => {
       { category: 'Paper', date: '08/11/2025', cleanedOnTime: 110, cleanedLate: 45, notCleaned: 40, fuelConsumptionLiters: 18.0, distanceTravelledKm: 155.00 },
       { category: 'Paper', date: '11/11/2025', cleanedOnTime: 30, cleanedLate: 15, notCleaned: 10, fuelConsumptionLiters: 8.5, distanceTravelledKm: 175.00 },
       { category: 'Paper', date: '14/11/2025', cleanedOnTime: 85, cleanedLate: 45, notCleaned: 35, fuelConsumptionLiters: 21.0, distanceTravelledKm: 195.00 },
-
-      // Organic waste
       { category: 'Organic waste', date: '14/10/2025', cleanedOnTime: 100, cleanedLate: 55, notCleaned: 40, fuelConsumptionLiters: 9.5, distanceTravelledKm: 180.00 },
       { category: 'Organic waste', date: '24/10/2025', cleanedOnTime: 75, cleanedLate: 35, notCleaned: 30, fuelConsumptionLiters: 11.0, distanceTravelledKm: 135.00 },
       { category: 'Organic waste', date: '01/11/2025', cleanedOnTime: 60, cleanedLate: 30, notCleaned: 25, fuelConsumptionLiters: 14.5, distanceTravelledKm: 105.00 },
@@ -657,7 +670,6 @@ const importData = async () => {
     ];
 
     const vehicleHistories = [
-      // 1. Date: 2025-12-19 (Matching Vehicle Monitoring10.png)
       {
         vehicleId: 'VI-123',
         date: '2025-12-19',
@@ -671,8 +683,6 @@ const importData = async () => {
           offlineTime: '20 min',
         },
       },
-      // Note: 2025-12-20 is intentionally OMITTED to test the empty gap ("No vehicle history available for the selected date.")
-      // 2. Date: 2025-12-21 (Matching Vehicle Monitoring10.png)
       {
         vehicleId: 'VI-123',
         date: '2025-12-21',
@@ -690,7 +700,6 @@ const importData = async () => {
           offlineTime: '15 min',
         },
       },
-      // 3. Date: 2025-12-27 (Matching Vehicle Monitoring4.png & 5.png)
       {
         vehicleId: 'VI-123',
         date: '2025-12-27',
@@ -705,12 +714,238 @@ const importData = async () => {
         },
       },
     ];
-
     await VehicleHistory.insertMany(vehicleHistories);
-    console.log(`Seeded ${vehicleHistories.length} VehicleHistory records for VI-123 (with gap on 2025-12-20).`);
+    console.log(`Seeded ${vehicleHistories.length} VehicleHistory records.`);
+
+    // 8. Seed Chatbot Conversations & Map Pins (Matching Chatbot2.png & Chat map.png)
+    console.log('Seeding Chatbot Conversations & Map Pins...');
+    const chatMessagesToInsert = [
+      // Thread 1: Hashibara inosuke (Active conversation in Chatbot2.png)
+      {
+        userId: 'hashibara_inosuke',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: "Hi! I'm Bin Matrix. Upload a photo of overflowing trash with its location, and I'll notify the cleaning team.",
+        timeString: '9.57 am',
+        timestamp: new Date('2025-12-21T09:57:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+      {
+        userId: 'hashibara_inosuke',
+        senderName: 'Hashibara inosuke',
+        senderAvatar: '/avatars/hashibara.png',
+        senderRole: 'user',
+        messageText: '',
+        imageAttachment: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800',
+        timeString: '9.58 am',
+        timestamp: new Date('2025-12-21T09:58:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+      {
+        userId: 'hashibara_inosuke',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: 'Sir, please send your current location',
+        timeString: '9.59 am',
+        timestamp: new Date('2025-12-21T09:59:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+      {
+        userId: 'hashibara_inosuke',
+        senderName: 'Hashibara inosuke',
+        senderAvatar: '/avatars/hashibara.png',
+        senderRole: 'user',
+        messageText: 'https://maps.app.goo.gl/iXuHwxJhcifJZUT7A',
+        mapLocationPin: {
+          lat: 6.8851,
+          lng: 80.0154,
+          url: 'https://maps.app.goo.gl/iXuHwxJhcifJZUT7A',
+          address: 'Dedigamuwa Road, Dedigamuwa',
+        },
+        timeString: '10.01 am',
+        timestamp: new Date('2025-12-21T10:01:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+
+      // Thread 2: Tomioka giyu
+      {
+        userId: 'tomioka_giyu',
+        senderName: 'Tomioka giyu',
+        senderAvatar: '/avatars/tomioka.png',
+        senderRole: 'user',
+        messageText: 'Garbage dump accumulating near Nawagamuwa school entrance.',
+        imageAttachment: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=800',
+        timeString: '9.50 am',
+        timestamp: new Date('2025-12-21T09:50:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'tomioka_giyu',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: 'Sir, please send your current location',
+        timeString: '9.55 am',
+        timestamp: new Date('2025-12-21T09:55:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'tomioka_giyu',
+        senderName: 'Tomioka giyu',
+        senderAvatar: '/avatars/tomioka.png',
+        senderRole: 'user',
+        messageText: 'https://maps.google.com/?q=6.9242,80.0051',
+        mapLocationPin: {
+          lat: 6.9242,
+          lng: 80.0051,
+          url: 'https://maps.google.com/?q=6.9242,80.0051',
+          address: 'Nawagamuwa Junction, Nawagamuwa',
+        },
+        timeString: '9.56 am',
+        timestamp: new Date('2025-12-21T09:56:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+
+      // Thread 3: Uzui tengen
+      {
+        userId: 'uzui_tengen',
+        senderName: 'Uzui tengen',
+        senderAvatar: '/avatars/uzui.png',
+        senderRole: 'user',
+        messageText: 'Overflowing public waste bin at Hanwella Bus Stand.',
+        imageAttachment: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=800',
+        timeString: '8.40 am',
+        timestamp: new Date('2025-12-21T08:40:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'uzui_tengen',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: 'Sir, please send your current location',
+        timeString: '8.45 am',
+        timestamp: new Date('2025-12-21T08:45:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'uzui_tengen',
+        senderName: 'Uzui tengen',
+        senderAvatar: '/avatars/uzui.png',
+        senderRole: 'user',
+        messageText: 'https://maps.google.com/?q=6.8925,80.0835',
+        mapLocationPin: {
+          lat: 6.8925,
+          lng: 80.0835,
+          url: 'https://maps.google.com/?q=6.8925,80.0835',
+          address: 'Hanwella Bus Stand Main Terminal',
+        },
+        timeString: '8.46 am',
+        timestamp: new Date('2025-12-21T08:46:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+
+      // Thread 4: Mitsuri kanori
+      {
+        userId: 'mitsuri_kanori',
+        senderName: 'Mitsuri kanori',
+        senderAvatar: '/avatars/mitsuri.png',
+        senderRole: 'user',
+        messageText: 'Plastic bottles scattered along Embulgama River Bank.',
+        imageAttachment: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800',
+        timeString: '8.30 am',
+        timestamp: new Date('2025-12-21T08:30:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+      {
+        userId: 'mitsuri_kanori',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: 'Sir, please send your current location',
+        timeString: '8.35 am',
+        timestamp: new Date('2025-12-21T08:35:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+      {
+        userId: 'mitsuri_kanori',
+        senderName: 'Mitsuri kanori',
+        senderAvatar: '/avatars/mitsuri.png',
+        senderRole: 'user',
+        messageText: 'https://maps.google.com/?q=6.8853,80.0542',
+        mapLocationPin: {
+          lat: 6.8853,
+          lng: 80.0542,
+          url: 'https://maps.google.com/?q=6.8853,80.0542',
+          address: 'Embulgama River Road',
+        },
+        timeString: '8.36 am',
+        timestamp: new Date('2025-12-21T08:36:00Z'),
+        status: 'read',
+        isOnline: true,
+      },
+
+      // Thread 5: Nezuko kamado
+      {
+        userId: 'nezuko_kamado',
+        senderName: 'Nezuko kamado',
+        senderAvatar: '/avatars/nezuko.png',
+        senderRole: 'user',
+        messageText: 'Commercial organic waste containers full on Galle Road.',
+        timeString: '7.58 am',
+        timestamp: new Date('2025-12-21T07:58:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'nezuko_kamado',
+        senderName: 'Bot',
+        senderAvatar: '/avatars/bot.png',
+        senderRole: 'bot',
+        messageText: 'Sir, please send your current location',
+        timeString: '8.01 am',
+        timestamp: new Date('2025-12-21T08:01:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+      {
+        userId: 'nezuko_kamado',
+        senderName: 'Nezuko kamado',
+        senderAvatar: '/avatars/nezuko.png',
+        senderRole: 'user',
+        messageText: 'https://maps.google.com/?q=6.8524,79.8654',
+        mapLocationPin: {
+          lat: 6.8524,
+          lng: 79.8654,
+          url: 'https://maps.google.com/?q=6.8524,79.8654',
+          address: 'Galle Rd, Dehiwala Junction',
+        },
+        timeString: '8.02 am',
+        timestamp: new Date('2025-12-21T08:02:00Z'),
+        status: 'read',
+        isOnline: false,
+      },
+    ];
+
+    await ChatMessage.insertMany(chatMessagesToInsert);
+    console.log(`Seeded ${chatMessagesToInsert.length} ChatMessages across 5 conversation threads & map pins.`);
 
     console.log('--------------------------------------------------');
-    console.log('SUCCESS: All data (including Vehicle Monitoring) seeded!');
+    console.log('SUCCESS: All data (including Chatbot & Drivers) seeded!');
     console.log('Default Admin Account: admin / admin123');
     console.log('--------------------------------------------------');
 
@@ -733,6 +968,7 @@ const destroyData = async () => {
       Route.deleteMany(),
       ReportMetric.deleteMany(),
       VehicleHistory.deleteMany(),
+      ChatMessage.deleteMany(),
     ]);
     console.log('All data destroyed.');
     process.exit(0);
