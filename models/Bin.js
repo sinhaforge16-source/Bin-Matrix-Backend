@@ -39,6 +39,19 @@ const binSchema = new mongoose.Schema(
       max: [100, 'Battery level cannot exceed 100'],
       default: 100,
     },
+    capacityStatus: {
+      type: String,
+      required: true,
+      enum: {
+        values: ['Normal', 'Almost Full', 'Overflowing'],
+        message: '{VALUE} is not a valid capacity status',
+      },
+      default: 'Normal',
+    },
+    isPriority: {
+      type: Boolean,
+      default: false,
+    },
     location: {
       type: String,
       required: [true, 'Location description is required'],
@@ -46,9 +59,11 @@ const binSchema = new mongoose.Schema(
     },
     latitude: {
       type: Number,
+      required: false,
     },
     longitude: {
       type: Number,
+      required: false,
     },
     lastUpdated: {
       type: Date,
@@ -60,15 +75,17 @@ const binSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for capacity classification as shown in Bin Monitoring UI
-binSchema.virtual('capacityStatus').get(function () {
-  if (this.fillLevel >= 90) return 'Overflowing';
-  if (this.fillLevel >= 75) return 'Almost Full';
-  return 'Normal';
+// Auto-derive capacityStatus based on fillLevel if not explicitly assigned
+binSchema.pre('validate', function () {
+  if (this.fillLevel !== undefined && !this.isModified('capacityStatus') && this.isNew) {
+    if (this.fillLevel >= 90) {
+      this.capacityStatus = 'Overflowing';
+    } else if (this.fillLevel >= 75) {
+      this.capacityStatus = 'Almost Full';
+    } else {
+      this.capacityStatus = 'Normal';
+    }
+  }
 });
 
-binSchema.set('toJSON', { virtuals: true });
-binSchema.set('toObject', { virtuals: true });
-
 module.exports = mongoose.model('Bin', binSchema);
-

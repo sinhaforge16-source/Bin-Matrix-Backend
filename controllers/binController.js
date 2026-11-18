@@ -1,6 +1,16 @@
 const Bin = require('../models/Bin');
 
-// @desc    Get all bins with filtering, search, and pagination
+// Helper to normalize category
+const normalizeCategory = (cat) => {
+  if (!cat || cat.toLowerCase() === 'all') return null;
+  const lower = cat.trim().toLowerCase();
+  if (lower === 'paper') return 'Paper';
+  if (lower === 'organic waste' || lower === 'organic') return 'Organic waste';
+  if (lower === 'plastic') return 'Plastic';
+  return cat;
+};
+
+// @desc    Get all bins with advanced filtering, search, and pagination
 // @route   GET /api/bins
 // @access  Public
 const getBins = async (req, res, next) => {
@@ -8,6 +18,8 @@ const getBins = async (req, res, next) => {
     const {
       category,
       status,
+      capacityStatus,
+      isPriority,
       search,
       fillLevelMin,
       fillLevelMax,
@@ -18,12 +30,21 @@ const getBins = async (req, res, next) => {
 
     const query = {};
 
-    if (category) {
-      query.category = category;
+    const normalizedCat = normalizeCategory(category);
+    if (normalizedCat) {
+      query.category = normalizedCat;
     }
 
     if (status) {
       query.status = status;
+    }
+
+    if (capacityStatus) {
+      query.capacityStatus = capacityStatus;
+    }
+
+    if (isPriority !== undefined) {
+      query.isPriority = isPriority === 'true' || isPriority === true;
     }
 
     if (fillLevelMin !== undefined || fillLevelMax !== undefined) {
@@ -53,6 +74,110 @@ const getBins = async (req, res, next) => {
       totalPages: Math.ceil(total / Number(limit)),
       currentPage: Number(page),
       data: bins,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get Bin Monitoring Summary (Normal, Almost Full, Overflowing, Priority + Map Pins)
+// @route   GET /api/bins/monitoring-summary
+// @access  Public
+const getBinMonitoringSummary = async (req, res, next) => {
+  try {
+    const rawCategory = req.query.category || 'All';
+    const normalizedCat = normalizeCategory(rawCategory);
+
+    const matchFilter = {};
+    if (normalizedCat) {
+      matchFilter.category = normalizedCat;
+    }
+
+    // 1. Fetch map pins
+    const mapPins = await Bin.find(matchFilter)
+      .select('binId category status capacityStatus isPriority fillLevel batteryLevel location latitude longitude lastUpdated')
+      .sort('-lastUpdated');
+
+    // 2. Aggregate the 4 buckets: Normal, Almost Full, Overflowing, Priority
+    const summaryAgg = await Bin.aggregate([
+      { $match: matchFilter },
+      {
+        $facet: {
+          normal: [
+            { $match: { capacityStatus: 'Normal' } },
+            {
+              $group: {
+                _id: null,
+                online: { $sum: { $cond: [{ $eq: ['$status', 'Online'] }, 1, 0] } },
+                offline: { $sum: { $cond: [{ $eq: ['$status', 'Offline'] }, 1, 0] } },
+                total: { $sum: 1 },
+              },
+            },
+          ],
+          almostFull: [
+            { $match: { capacityStatus: 'Almost Full' } },
+            {
+              $group: {
+                _id: null,
+                online: { $sum: { $cond: [{ $eq: ['$status', 'Online'] }, 1, 0] } },
+                offline: { $sum: { $cond: [{ $eq: ['$status', 'Offline'] }, 1, 0] } },
+                total: { $sum: 1 },
+              },
+            },
+          ],
+          overflowing: [
+            { $match: { capacityStatus: 'Overflowing' } },
+            {
+              $group: {
+                _id: null,
+                online: { $sum: { $cond: [{ $eq: ['$status', 'Online'] }, 1, 0] } },
+                offline: { $sum: { $cond: [{ $eq: ['$status', 'Offline'] }, 1, 0] } },
+                total: { $sum: 1 },
+              },
+            },
+          ],
+          priority: [
+            { $match: { isPriority: true } },
+            {
+              $group: {
+                _id: null,
+                online: { $sum: { $cond: [{ $eq: ['$status', 'Online'] }, 1, 0] } },
+                offline: { $sum: { $cond: [{ $eq: ['$status', 'Offline'] }, 1, 0] } },
+                total: { $sum: 1 },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const extractBucket = (facetArr, title, subtitle) => {
+      const data = facetArr?.[0] || { online: 0, offline: 0, total: 0 };
+      return {
+        title,
+        subtitle,
+        online: data.online || 0,
+        offline: data.offline || 0,
+        total: data.total || 0,
+      };
+    };
+
+    const result = summaryAgg[0] || {};
+
+    const summary = {
+      normal: extractBucket(result.normal, 'Normal', 'Within safe capacity'),
+      almostFull: extractBucket(result.almostFull, 'Almost Full', 'Near Capacity'),
+      overflowing: extractBucket(result.overflowing, 'Overflowing', 'Critical Bins'),
+      priority: extractBucket(result.priority, 'Priority', 'Priority Bins'),
+    };
+
+    res.json({
+      success: true,
+      category: rawCategory,
+      data: {
+        summary,
+        mapPins,
+      },
     });
   } catch (error) {
     next(error);
@@ -95,8 +220,18 @@ const getBinById = async (req, res, next) => {
 // @access  Private
 const createBin = async (req, res, next) => {
   try {
-    const { binId, category, status, fillLevel, batteryLevel, location, latitude, longitude } =
-      req.body;
+    const {
+      binId,
+      category,
+      status,
+      fillLevel,
+      batteryLevel,
+      capacityStatus,
+      isPriority,
+      location,
+      latitude,
+      longitude,
+    } = req.body;
 
     const existingBin = await Bin.findOne({ binId });
     if (existingBin) {
@@ -112,6 +247,8 @@ const createBin = async (req, res, next) => {
       status: status || 'Online',
       fillLevel: fillLevel !== undefined ? fillLevel : 0,
       batteryLevel: batteryLevel !== undefined ? batteryLevel : 100,
+      capacityStatus: capacityStatus || (fillLevel >= 90 ? 'Overflowing' : fillLevel >= 75 ? 'Almost Full' : 'Normal'),
+      isPriority: isPriority !== undefined ? isPriority : false,
       location: location || 'Galle Rd, Dehiwala-Mount Lavinia',
       latitude,
       longitude,
@@ -140,11 +277,18 @@ const updateBin = async (req, res, next) => {
       query.binId = id;
     }
 
-    const bin = await Bin.findOneAndUpdate(
-      query,
-      { ...req.body, lastUpdated: Date.now() },
-      { new: true, runValidators: true }
-    );
+    // Auto-update capacityStatus if fillLevel changed without explicit capacityStatus
+    const updateData = { ...req.body, lastUpdated: Date.now() };
+    if (updateData.fillLevel !== undefined && !updateData.capacityStatus) {
+      if (updateData.fillLevel >= 90) updateData.capacityStatus = 'Overflowing';
+      else if (updateData.fillLevel >= 75) updateData.capacityStatus = 'Almost Full';
+      else updateData.capacityStatus = 'Normal';
+    }
+
+    const bin = await Bin.findOneAndUpdate(query, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!bin) {
       return res.status(404).json({
@@ -197,9 +341,9 @@ const deleteBin = async (req, res, next) => {
 
 module.exports = {
   getBins,
+  getBinMonitoringSummary,
   getBinById,
   createBin,
   updateBin,
   deleteBin,
 };
-

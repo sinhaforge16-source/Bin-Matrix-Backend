@@ -10,15 +10,28 @@ Production-ready Node.js, Express, and MongoDB (MERN) backend for the **Bin Matr
 - **JWT Authentication & RBAC**: Secure token-based authentication (`/api/auth`) with bcrypt password hashing and role-based route protection.
 - **Live Aggregation Dashboard (`/api/dashboard/summary`)**:
   - Aggregates overall bin statistics (online/offline counts, low battery count, and category fill levels).
-  - Categorical breakdowns (`Plastic`, `Paper`, `Organic waste`) for Driver Status (Total, Today's Present, Allocated, Unallocated Present) and Truck Status (Online/Offline, Idle Truck, Total Distance, Fuel Consumption) matching the Figma `Home.png` UI.
-- **Full CRUD Endpoints**: RESTful APIs with filtering, searching, sorting, and pagination for:
-  - Bins (`/api/bins`)
+  - Categorical breakdowns (`Plastic`, `Paper`, `Organic waste`) for Driver Status (Total, Today's Present, Allocated, Unallocated Present) and Truck Status (Online/Offline, Idle Truck, Total Distance, Fuel Consumption) matching `Home.png`.
+- **Detailed Reports Analytics (`/api/reports/analytics`)**:
+  - Returns historical and monthly analytics matching `Detailed Reports.png`:
+    - Monthly Bin Cleaning Efficiency (time-series stacked bar: cleaned on-time, late, not cleaned).
+    - Monthly Cleaning Status Distribution (pie chart distribution: 63% on-time, 21% late, 7% not cleaned).
+    - Monthly Fuel Consumption (line chart time-series in liters).
+    - Monthly Total Distance Travelled (bar chart in KM, e.g. 192.92 km).
+- **Live Bin Map & Capacity Monitoring (`/api/bins/monitoring-summary`)**:
+  - Groups bins into four status buckets matching `Bin Monitoring 1.png`:
+    - `Normal` (Within safe capacity)
+    - `Almost Full` (Near Capacity)
+    - `Overflowing` (Critical Bins)
+    - `Priority` (Priority Bins)
+  - Provides GPS map pins populated with realistic coordinates around Hanwella, Nawagamuwa, Dedigamuwa, Artigala, and Dehiwala-Mount Lavinia.
+- **Full CRUD Endpoints with Advanced Filters**:
+  - Bins (`/api/bins` with `?category=Paper`, `?capacityStatus=Almost Full`, `?isPriority=true`, `?status=Online`).
   - Drivers (`/api/drivers`)
   - Trucks (`/api/trucks`)
   - Routes (`/api/routes`)
   - Users (`/api/users`)
-- **Robust Error Handling**: Centralized error middleware handling Mongoose validation errors, duplicate keys, and invalid ObjectIds.
-- **Automated Seeding Script**: Pre-configured `seeder.js` populating exact metrics matching the dashboard designs.
+  - Reports (`/api/reports`)
+- **Automated Seeder**: Pre-configured `seeder.js` populating exact design metrics and realistic IDs (`Deh-2213-Ai`, `Deh-2233-Gn`, `Deh-2243-Fa`, `Deh-2314-At`).
 
 ---
 
@@ -30,9 +43,10 @@ Bin-Matrix-Backend/
 │   └── db.js                 # MongoDB connection logic
 ├── controllers/
 │   ├── authController.js      # Auth logic (register, login, getMe)
-│   ├── binController.js       # Bins CRUD & filtering
+│   ├── binController.js       # Bins CRUD, filtering & map monitoring summary
 │   ├── dashboardController.js # Aggregations for Home.png dashboard
 │   ├── driverController.js    # Drivers CRUD & category filtering
+│   ├── reportController.js    # Historical analytics for Detailed Reports
 │   ├── routeController.js     # Routes management & assignments
 │   ├── truckController.js     # Trucks fleet management
 │   └── userController.js      # Users management
@@ -40,16 +54,18 @@ Bin-Matrix-Backend/
 │   ├── authMiddleware.js      # JWT verification & role authorization
 │   └── errorMiddleware.js     # 404 & centralized error handler
 ├── models/
-│   ├── Bin.js                 # Bin schema (binId, category, status, fillLevel, batteryLevel, location)
+│   ├── Bin.js                 # Bin schema (binId, category, status, fillLevel, capacityStatus, isPriority, GPS)
 │   ├── Driver.js              # Driver schema (name, driverId, category, isPresentToday, isAllocated)
+│   ├── ReportMetric.js        # Analytics schema (category, date, onTime, late, notCleaned, fuel, distance)
 │   ├── Route.js               # Route schema (routeName, area, assignedTruck, assignedDriver, status)
-│   ├── Truck.js               # Truck schema (truckNumber, category, status, isIdle, totalDistanceKm, fuelConsumption)
+│   ├── Truck.js               # Truck schema (truckNumber, category, status, isIdle, distance, fuel)
 │   └── User.js                # User schema (username, password, role, email)
 ├── routes/
 │   ├── authRoutes.js          # /api/auth
 │   ├── binRoutes.js           # /api/bins
 │   ├── dashboardRoutes.js     # /api/dashboard
 │   ├── driverRoutes.js        # /api/drivers
+│   ├── reportRoutes.js        # /api/reports
 │   ├── routeRoutes.js         # /api/routes
 │   ├── truckRoutes.js         # /api/trucks
 │   └── userRoutes.js          # /api/users
@@ -71,10 +87,10 @@ Bin-Matrix-Backend/
    - [MongoDB](https://www.mongodb.com/) running locally on port 27017 or a MongoDB Atlas URI.
 
 2. **Environment Variables**:
-   Copy `.env.example` to `.env` or edit `.env`:
+   Configure [.env](file:///e:/Company/Sinhaforge/Bin%20matrix/Bin-Matrix-Backend/.env):
    ```env
    PORT=5000
-   MONGO_URI=mongodb://localhost:27017/binmatrix
+   MONGO_URI=mongodb://127.0.0.1:27017/binmatrix
    JWT_SECRET=supersecretkey
    NODE_ENV=development
    ```
@@ -117,77 +133,37 @@ Bin-Matrix-Backend/
 
 ## 📡 API Reference
 
-### 1. Authentication (`/api/auth`)
+### 1. Detailed Reports (`/api/reports`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/reports/analytics?category=Plastic` | Analytics for cleaning efficiency, pie chart, fuel, distance | Public |
+| `GET` | `/api/reports` | List all raw report records | Public |
+| `POST` | `/api/reports` | Create report metric record | Protected |
+
+### 2. Bin Monitoring & CRUD (`/api/bins`)
+- Query parameters: `?category=Paper&capacityStatus=Almost%20Full&isPriority=true&status=Online`
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/bins/monitoring-summary?category=All` | 4 buckets (Normal, Almost Full, Overflowing, Priority) + Map pins | Public |
+| `GET` | `/api/bins` | List bins with filtering, search, & pagination | Public |
+| `GET` | `/api/bins/:id` | Get bin by MongoDB _id or `binId` | Public |
+| `POST` | `/api/bins` | Create a new bin | Public/Protected |
+| `PUT` | `/api/bins/:id` | Update bin by _id or `binId` | Public/Protected |
+| `DELETE` | `/api/bins/:id` | Delete bin by _id or `binId` | Public/Protected |
+
+### 3. Authentication (`/api/auth`)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Register a new user | Public |
 | `POST` | `/api/auth/login` | Login and receive JWT token | Public |
 | `GET` | `/api/auth/me` | Get current logged-in user profile | Protected (JWT) |
 
-### 2. Dashboard Summary (`/api/dashboard`)
+### 4. Dashboard Summary (`/api/dashboard`)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| `GET` | `/api/dashboard/summary` | Aggregated metrics for `Home.png` | Public / Protected |
+| `GET` | `/api/dashboard/summary` | High-level metrics matching `Home.png` | Public |
 
-#### Sample Dashboard Response:
-```json
-{
-  "success": true,
-  "data": {
-    "location": "Galle Rd, Dehiwala-Mount Lavinia",
-    "binStatus": {
-      "online": 120,
-      "offline": 3,
-      "total": 123,
-      "ratio": "120/3",
-      "lowBattery": 10,
-      "fillLevel": {
-        "Plastic": 15,
-        "Paper": 8,
-        "Organic waste": 30
-      }
-    },
-    "categories": {
-      "Plastic": {
-        "driverStatus": {
-          "totalDrivers": 100,
-          "todaysPresent": 94,
-          "allocatedDrivers": 90,
-          "unallocatedPresent": 4
-        },
-        "truckStatus": {
-          "online": 120,
-          "offline": 3,
-          "totalTrucks": 123,
-          "idleTruck": 10,
-          "totalDistanceKm": 900,
-          "fuelConsumption": 150
-        }
-      },
-      "Paper": {
-        "driverStatus": { ... },
-        "truckStatus": { ... }
-      },
-      "Organic waste": {
-        "driverStatus": { ... },
-        "truckStatus": { ... }
-      }
-    }
-  }
-}
-```
-
-### 3. Bins (`/api/bins`)
-- Query parameters: `?category=Plastic&status=Online&search=Galle&page=1&limit=20`
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/bins` | List bins with filtering & pagination | Public |
-| `GET` | `/api/bins/:id` | Get bin by MongoDB _id or `binId` | Public |
-| `POST` | `/api/bins` | Create a new bin | Public/Protected |
-| `PUT` | `/api/bins/:id` | Update bin by _id or `binId` | Public/Protected |
-| `DELETE` | `/api/bins/:id` | Delete bin by _id or `binId` | Public/Protected |
-
-### 4. Drivers (`/api/drivers`)
+### 5. Drivers (`/api/drivers`)
 - Query parameters: `?category=Paper&isPresentToday=true&isAllocated=false`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
@@ -197,7 +173,7 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/drivers/:id` | Update driver | Public/Protected |
 | `DELETE` | `/api/drivers/:id` | Delete driver | Public/Protected |
 
-### 5. Trucks (`/api/trucks`)
+### 6. Trucks (`/api/trucks`)
 - Query parameters: `?category=Plastic&status=Online&isIdle=false`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
@@ -207,7 +183,7 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/trucks/:id` | Update truck | Public/Protected |
 | `DELETE` | `/api/trucks/:id` | Delete truck | Public/Protected |
 
-### 6. Routes (`/api/routes`)
+### 7. Routes (`/api/routes`)
 - Query parameters: `?category=Plastic&status=In%20Progress&area=Galle`
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
@@ -217,7 +193,7 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/routes/:id` | Update route | Public/Protected |
 | `DELETE` | `/api/routes/:id` | Delete route | Public/Protected |
 
-### 7. Users (`/api/users`)
+### 8. Users (`/api/users`)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | `GET` | `/api/users` | List system users | Protected |
@@ -225,4 +201,3 @@ Bin-Matrix-Backend/
 | `POST` | `/api/users` | Create user | Protected |
 | `PUT` | `/api/users/:id` | Update user | Protected |
 | `DELETE` | `/api/users/:id` | Delete user | Protected |
-

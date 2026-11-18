@@ -26,7 +26,9 @@ app.get('/', (req, res) => {
     documentation: {
       auth: '/api/auth',
       dashboard: '/api/dashboard/summary',
+      reports: '/api/reports/analytics',
       bins: '/api/bins',
+      binMonitoring: '/api/bins/monitoring-summary',
       drivers: '/api/drivers',
       trucks: '/api/trucks',
       routes: '/api/routes',
@@ -38,6 +40,7 @@ app.get('/', (req, res) => {
 // Mount Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/bins', require('./routes/binRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/trucks', require('./routes/truckRoutes'));
