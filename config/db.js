@@ -10,8 +10,10 @@ try {
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/binmatrix');
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/binmatrix', {
+      dbName: 'binmatrix',
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host} [Database: ${conn.connection.db.databaseName}]`);
   } catch (error) {
     console.error(`Database Connection Error: ${error.message}`);
     process.exit(1);
