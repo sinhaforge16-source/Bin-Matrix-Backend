@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const dns = require('dns');
+
+// Fix for Node.js querySrv ECONNREFUSED on Wi-Fi/ISP networks lacking SRV support
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Fallback gracefully
+}
 
 // Load env vars
 dotenv.config();
