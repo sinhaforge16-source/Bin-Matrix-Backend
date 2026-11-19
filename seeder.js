@@ -17,6 +17,7 @@ const ChatMessage = require('./models/ChatMessage');
 const Notification = require('./models/Notification');
 const RoutePlan = require('./models/RoutePlan');
 const AppUser = require('./models/AppUser');
+const VehicleAssignment = require('./models/VehicleAssignment');
 
 // Connect to DB
 const connectDB = async () => {
@@ -64,6 +65,7 @@ const importData = async () => {
       Notification.deleteMany(),
       RoutePlan.deleteMany(),
       AppUser.deleteMany(),
+      VehicleAssignment.deleteMany(),
     ]);
 
     // 1. Seed Users (Default Admin & Staff)
@@ -1378,8 +1380,79 @@ const importData = async () => {
     await AppUser.insertMany(appUsersToInsert);
     console.log(`Seeded ${appUsersToInsert.length} AppUsers.`);
 
+    // 12. Seed Vehicle Assignments (Vehicles2.png)
+    console.log('Seeding Vehicle Assignments (Vehicles2.png)...');
+    const vehicleAssignmentsToInsert = [
+      {
+        vehicleId: 'VI-123',
+        driverId: 'DRI-123',
+        driverName: 'G.Kamal',
+        route: 'Pla 1',
+        wasteType: 'Plastic',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-321',
+        driverId: 'DRI-124',
+        driverName: 'N.Sunil',
+        route: 'Pap 2',
+        wasteType: 'Paper',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-456',
+        driverId: 'DRI-125',
+        driverName: 'P.Silva',
+        route: 'Ewa 3',
+        wasteType: 'Organic Waste',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-756',
+        driverId: 'DRI-126',
+        driverName: 'A.Perera',
+        route: 'bot 1',
+        wasteType: 'Chatbot',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-568',
+        driverId: 'DRI-127',
+        driverName: 'K.Fernando',
+        route: 'Ewa 1',
+        wasteType: 'E-waste',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-156',
+        driverId: 'DRI-128',
+        driverName: 'M.Bandara',
+        route: 'Pla 2',
+        wasteType: 'Plastic',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-556',
+        driverId: 'DRI-129',
+        driverName: 'S.Kumara',
+        route: 'Pap 1',
+        wasteType: 'Paper',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-459',
+        driverId: 'DRI-130',
+        driverName: 'T.Jayasinghe',
+        route: 'Owa 1',
+        wasteType: 'Organic Waste',
+        status: 'Active',
+      },
+    ];
+    await VehicleAssignment.insertMany(vehicleAssignmentsToInsert);
+    console.log(`Seeded ${vehicleAssignmentsToInsert.length} Vehicle Assignments.`);
+
     console.log('--------------------------------------------------');
-    console.log('SUCCESS: All data (including Notifications, Routes & Users) seeded!');
+    console.log('SUCCESS: All data (including Vehicle Assignments) seeded!');
     console.log('Default Admin Account: admin / admin123');
     console.log('--------------------------------------------------');
 
@@ -1406,6 +1479,7 @@ const destroyData = async () => {
       Notification.deleteMany(),
       RoutePlan.deleteMany(),
       AppUser.deleteMany(),
+      VehicleAssignment.deleteMany(),
     ]);
     console.log('All data destroyed.');
     process.exit(0);

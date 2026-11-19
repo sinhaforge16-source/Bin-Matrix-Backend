@@ -49,3 +49,4 @@ const notificationSchema = new mongoose.Schema(
 notificationSchema.index({ category: 1, timestamp: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
+

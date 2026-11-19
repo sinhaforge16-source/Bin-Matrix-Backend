@@ -12,3 +12,4 @@ router.route('/').get(getAppUsers).post(createAppUser);
 router.route('/:id').get(getAppUserById).put(updateAppUser).delete(deleteAppUser);
 
 module.exports = router;
+

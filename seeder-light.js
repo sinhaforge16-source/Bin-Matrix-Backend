@@ -16,6 +16,7 @@ const ChatMessage = require('./models/ChatMessage');
 const Notification = require('./models/Notification');
 const RoutePlan = require('./models/RoutePlan');
 const AppUser = require('./models/AppUser');
+const VehicleAssignment = require('./models/VehicleAssignment');
 
 const connectDB = async () => {
   try {
@@ -48,6 +49,7 @@ const seedLightData = async () => {
       Notification.deleteMany(),
       RoutePlan.deleteMany(),
       AppUser.deleteMany(),
+      VehicleAssignment.deleteMany(),
     ]);
 
     // 1. Users (2 records)
@@ -542,6 +544,35 @@ const seedLightData = async () => {
       },
     ]);
 
+    // 12. Vehicle Assignments (3 records matching Vehicles2.png)
+    console.log('Seeding 3 Vehicle Assignments...');
+    await VehicleAssignment.create([
+      {
+        vehicleId: 'VI-123',
+        driverId: 'DRI-123',
+        driverName: 'G.Kamal',
+        route: 'Pla 1',
+        wasteType: 'Plastic',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-321',
+        driverId: 'DRI-124',
+        driverName: 'N.Sunil',
+        route: 'Pap 2',
+        wasteType: 'Paper',
+        status: 'Active',
+      },
+      {
+        vehicleId: 'VI-456',
+        driverId: 'DRI-125',
+        driverName: 'P.Silva',
+        route: 'Ewa 3',
+        wasteType: 'Organic Waste',
+        status: 'Active',
+      },
+    ]);
+
     console.log('--------------------------------------------------');
     console.log('SUCCESS: Lightweight dataset (2-3 items per collection) seeded!');
     console.log('Collections created in MongoDB Atlas:');
@@ -556,6 +587,7 @@ const seedLightData = async () => {
     console.log('- notifications (3)');
     console.log('- routeplans (2)');
     console.log('- appusers (3)');
+    console.log('- vehicleassignments (3)');
     console.log('--------------------------------------------------');
 
     process.exit(0);

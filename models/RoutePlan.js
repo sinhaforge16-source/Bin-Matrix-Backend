@@ -66,3 +66,4 @@ const routePlanSchema = new mongoose.Schema(
 routePlanSchema.index({ category: 1, routeName: 1 });
 
 module.exports = mongoose.model('RoutePlan', routePlanSchema);
+

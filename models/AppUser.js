@@ -54,3 +54,4 @@ const appUserSchema = new mongoose.Schema(
 appUserSchema.index({ category: 1, userId: 1 });
 
 module.exports = mongoose.model('AppUser', appUserSchema);
+

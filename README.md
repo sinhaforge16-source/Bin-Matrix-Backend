@@ -36,6 +36,10 @@ Production-ready Node.js, Express, and MongoDB (MERN) backend for the **Bin Matr
 - **User Management Table (`/api/app-users`)**:
   - Full CRUD operations matching `Users.png` with fields: `userId` (`VI-123`), `email`, `assignedBinId`, `status`, `percentage`, `location`, `lastUpdated`.
   - Returns `availableBins` list for instant frontend dropdown selection.
+- **Vehicle Assignment & Vehicles List (`/api/vehicle-assignments`)**:
+  - Vehicle-to-driver-to-route assignment workflow matching `Vehicles1.png` (Assignment modal) and `Vehicles2.png` (Vehicles List table).
+  - Supports filtering by `?wasteType=Plastic` (case-insensitive for `Plastic`, `Paper`, `Organic Waste`, `E-waste`, `Chatbot`).
+  - Full CRUD support with instant dropdown options for waste types, drivers, vehicles, and routes.
 - **Full CRUD Endpoints with Advanced Filters**:
   - Bins (`/api/bins` with `?category=Paper`, `?capacityStatus=Almost Full`, `?isPriority=true`, `?status=Online`).
   - Drivers (`/api/drivers`)
@@ -64,7 +68,8 @@ Bin-Matrix-Backend/
 │   ├── reportController.js    # Historical analytics for Detailed Reports
 │   ├── routeController.js     # Routes management & route optimization
 │   ├── truckController.js     # Fleet vehicles & history management
-│   └── userController.js      # Users management
+│   ├── userController.js      # Users management
+│   └── vehicleAssignmentController.js # Vehicle-to-driver-to-route assignments
 ├── middleware/
 │   ├── authMiddleware.js      # JWT verification & role authorization
 │   └── errorMiddleware.js     # 404 & centralized error handler
@@ -79,6 +84,7 @@ Bin-Matrix-Backend/
 │   ├── RoutePlan.js           # Route optimization steps schema (Routes1.png & Routes2.png)
 │   ├── Truck.js               # Truck schema (truckNumber, category, status, isIdle, distance, fuel)
 │   ├── User.js                # System user schema (username, password, role, email)
+│   ├── VehicleAssignment.js   # Vehicle assignment schema (Vehicles1.png & Vehicles2.png)
 │   └── VehicleHistory.js      # Granular timeline activity logs schema
 ├── routes/
 │   ├── appUserRoutes.js       # /api/app-users
@@ -91,7 +97,8 @@ Bin-Matrix-Backend/
 │   ├── reportRoutes.js        # /api/reports
 │   ├── routeRoutes.js         # /api/routes
 │   ├── truckRoutes.js         # /api/trucks
-│   └── userRoutes.js          # /api/users
+│   ├── userRoutes.js          # /api/users
+│   └── vehicleAssignmentRoutes.js # /api/vehicle-assignments
 ├── .env                       # Environment variables
 ├── .env.example               # Example environment variables
 ├── .gitignore                 # Git ignore rules
@@ -248,7 +255,18 @@ Bin-Matrix-Backend/
 | `PUT` | `/api/app-users/:id` | Update user (inline assigned bin dropdown or status change) | Public |
 | `DELETE` | `/api/app-users/:id` | Delete app user | Public |
 
-### 11. System Users & RBAC (`/api/users`)
+### 11. Vehicle Assignment & Vehicles List (`/api/vehicle-assignments`)
+- Aliased at: `/api/trucks/assignments`
+- Query parameters: `?wasteType=Plastic` (case-insensitive) & `?search=Kamal`
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/vehicle-assignments` | Fetch all vehicle assignments + dropdown options matching `Vehicles1.png` & `Vehicles2.png` | Public |
+| `GET` | `/api/vehicle-assignments/:id` | Get single vehicle assignment by MongoDB _id or `vehicleId` | Public |
+| `POST` | `/api/vehicle-assignments` | Create/save new assignment (`DONE` button in `Vehicles1.png`) | Public |
+| `PUT` | `/api/vehicle-assignments/:id` | Update vehicle assignment (table row edit in `Vehicles2.png`) | Public |
+| `DELETE` | `/api/vehicle-assignments/:id` | Delete assignment (trash icon in `Vehicles2.png`) | Public |
+
+### 12. System Users & RBAC (`/api/users`)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | `GET` | `/api/users` | List system users | Protected |

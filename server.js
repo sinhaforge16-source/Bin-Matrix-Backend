@@ -35,6 +35,7 @@ app.get('/', (req, res) => {
       notifications: '/api/notifications',
       routes: '/api/routes',
       optimizedRoute: '/api/routes/optimized',
+      vehicleAssignments: '/api/vehicle-assignments',
       appUsers: '/api/app-users',
       users: '/api/users',
     },
@@ -48,6 +49,8 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/bins', require('./routes/binRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/trucks', require('./routes/truckRoutes'));
+app.use('/api/trucks/assignments', require('./routes/vehicleAssignmentRoutes'));
+app.use('/api/vehicle-assignments', require('./routes/vehicleAssignmentRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/routes', require('./routes/routeRoutes'));

@@ -12,3 +12,4 @@ router.patch('/read-all', markAllNotificationsAsRead);
 router.patch('/:id/read', markNotificationAsRead);
 
 module.exports = router;
+
