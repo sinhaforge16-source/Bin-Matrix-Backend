@@ -274,3 +274,12 @@ Bin-Matrix-Backend/
 | `POST` | `/api/users` | Create user | Protected |
 | `PUT` | `/api/users/:id` | Update user | Protected |
 | `DELETE` | `/api/users/:id` | Delete user | Protected |
+
+---
+
+## 🌐 Database Configuration & Atlas Connectivity
+
+- **Enforced Database Name**: Configured with `{ dbName: 'binmatrix' }` in `config/db.js` to ensure telemetry, fleet, and citizen accounts are strictly saved to the `binmatrix` database.
+- **Public DNS Fallback**: Node.js integrates Google (`8.8.8.8`) and Cloudflare (`1.1.1.1`) DNS resolvers to reliably resolve MongoDB Atlas SRV records across all network and ISP configurations.
+- **Cross-Platform Host Support**: Serves the React Web Portal (`http://localhost:5000/api`) and the React Native Mobile App (`http://10.0.2.2:5000/api` for Android emulator / LAN IP for physical devices).
+
