@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
   try {
-    const { username, password, role, email, fullName } = req.body;
+    const { username, password, role, email, fullName, binKey } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({
@@ -22,20 +22,38 @@ const registerUser = async (req, res, next) => {
       });
     }
 
-    const userExists = await User.findOne({ username });
+    const trimmedUsername = username.trim();
+    const trimmedBinKey = binKey ? binKey.trim().toUpperCase() : null;
+
+    // 1. Check if user with this username already exists (case-insensitive)
+    const userExists = await User.findOne({
+      username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') },
+    });
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with that username',
+        message: 'This username is already taken. Please choose a different username.',
       });
     }
 
+    // 2. Check if user with this binKey already exists (each bin can only be registered once)
+    if (trimmedBinKey) {
+      const binKeyExists = await User.findOne({ binKey: trimmedBinKey });
+      if (binKeyExists) {
+        return res.status(400).json({
+          success: false,
+          message: `The Smart Bin Key "${trimmedBinKey}" is already registered to another user account. Each bin can only have one registered user.`,
+        });
+      }
+    }
+
     const user = await User.create({
-      username,
+      username: trimmedUsername,
       password,
-      role: role || 'admin',
+      role: role || 'user',
       email,
       fullName,
+      binKey: trimmedBinKey || undefined,
     });
 
     res.status(201).json({
@@ -47,6 +65,7 @@ const registerUser = async (req, res, next) => {
         role: user.role,
         email: user.email,
         fullName: user.fullName,
+        binKey: user.binKey,
       },
     });
   } catch (error) {

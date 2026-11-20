@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    binKey: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
